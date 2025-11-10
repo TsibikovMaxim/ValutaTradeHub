@@ -1,0 +1,308 @@
+"""Командный интерфейс (CLI)."""
+
+from valutatrade_hub.core import usecases
+from valutatrade_hub.core.exceptions import (
+    ApiRequestError,
+    CurrencyNotFoundError,
+    InsufficientFundsError,
+)
+from valutatrade_hub.parser_service.api_clients import (
+    CoinGeckoClient,
+    ExchangeRateApiClient,
+)
+from valutatrade_hub.parser_service.config import ParserConfig
+from valutatrade_hub.parser_service.updater import RatesUpdater
+
+# Глобальная сессия (текущий пользователь)
+current_user = None
+
+
+def parse_args(command_line: str) -> tuple:
+    """Парсит строку команды."""
+    parts = command_line.strip().split()
+    if not parts:
+        return None, {}
+
+    command = parts[0]
+    args = {}
+
+    i = 1
+    while i < len(parts):
+        if parts[i].startswith("--"):
+            key = parts[i][2:]
+            if i + 1 < len(parts) and not parts[i + 1].startswith("--"):
+                value = parts[i + 1]
+                i += 2
+            else:
+                value = True
+                i += 1
+            args[key] = value
+        else:
+            i += 1
+
+    return command, args
+
+
+def cmd_register(args):
+    """Команда register."""
+    username = args.get("username")
+    password = args.get("password")
+
+    if not username or not password:
+        print("Использование: register --username <name> --password <pass>")
+        return
+
+    try:
+        result = usecases.register_user(username, password)
+        print(
+            f"Пользователь '{result['username']}' зарегистрирован "
+            f"(id={result['user_id']}). "
+            f"Войдите: login --username {username} --password ****"
+        )
+    except ValueError as e:
+        print(f"Ошибка: {e}")
+
+
+def cmd_login(args):
+    """Команда login."""
+    global current_user
+
+    username = args.get("username")
+    password = args.get("password")
+
+    if not username or not password:
+        print("Использование: login --username <name> --password <pass>")
+        return
+
+    try:
+        user = usecases.login_user(username, password)
+        current_user = user
+        print(f"Вы вошли как '{user.username}'")
+    except ValueError as e:
+        print(f"Ошибка: {e}")
+
+
+def cmd_show_portfolio(args):
+    """Команда show-portfolio с prettytable."""
+    if not current_user:
+        print("Сначала выполните login")
+        return
+
+    base = args.get("base", "USD").upper()
+
+    try:
+        from prettytable import PrettyTable
+
+        portfolio = usecases.load_portfolio(current_user.user_id)
+        wallets = portfolio.wallets
+
+        if not wallets:
+            print(f"Портфель пользователя '{current_user.username}' пуст.")
+            return
+
+        print(f"\nПортфель пользователя '{current_user.username}' (база: {base}):\n")
+
+        table = PrettyTable()
+        table.field_names = ["Валюта", "Баланс", f"Стоимость ({base})"]
+
+        from valutatrade_hub.infra.database import DatabaseManager
+        from valutatrade_hub.infra.settings import SettingsLoader
+
+        settings = SettingsLoader()
+        db = DatabaseManager()
+        rates = db.read_json(settings.rates_file)
+
+        total_value = 0.0
+
+        for code, wallet in wallets.items():
+            balance = wallet.balance
+
+            if code == base:
+                value = balance
+            else:
+                pair_key = f"{code}_{base}"
+                rate = rates.get("pairs", {}).get(pair_key, {}).get("rate", 0)
+                value = balance * rate if rate else 0
+
+            total_value += value
+            table.add_row([code, f"{balance:.4f}", f"{value:.2f}"])
+
+        print(table)
+        print(f"\nИТОГО: {total_value:,.2f} {base}\n")
+
+    except Exception as e:
+        print(f"Ошибка: {e}")
+
+
+def cmd_buy(args):
+    """Команда buy."""
+    if not current_user:
+        print("Сначала выполните login")
+        return
+
+    currency = args.get("currency")
+    amount = args.get("amount")
+
+    if not currency or not amount:
+        print("Использование: buy --currency <CODE> --amount <float>")
+        return
+
+    try:
+        amount = float(amount)
+        result = usecases.buy(current_user.user_id, currency, amount)
+
+        print(
+            f"Покупка выполнена: {result['amount']:.4f} {result['currency']} "
+            f"по курсу {result['rate']:.2f} USD/{result['currency']}"
+        )
+        print("Изменения в портфеле:")
+        print(
+            f"- {result['currency']}: было {result['old_balance']:.4f} "
+            f"→ стало {result['new_balance']:.4f}"
+        )
+        if result.get("estimated_cost"):
+            print(
+                f"Оценочная стоимость покупки: {result['estimated_cost']:.2f} USD"
+            )
+
+    except (ValueError, CurrencyNotFoundError) as e:
+        print(f"Ошибка: {e}")
+
+
+def cmd_sell(args):
+    """Команда sell."""
+    if not current_user:
+        print("Сначала выполните login")
+        return
+
+    currency = args.get("currency")
+    amount = args.get("amount")
+
+    if not currency or not amount:
+        print("Использование: sell --currency <CODE> --amount <float>")
+        return
+
+    try:
+        amount = float(amount)
+        result = usecases.sell(current_user.user_id, currency, amount)
+
+        print(
+            f"Продажа выполнена: {result['amount']:.4f} {result['currency']} "
+            f"по курсу {result['rate']:.2f} USD/{result['currency']}"
+        )
+        print("Изменения в портфеле:")
+        print(
+            f"- {result['currency']}: было {result['old_balance']:.4f} "
+            f"→ стало {result['new_balance']:.4f}"
+        )
+        if result.get("estimated_revenue"):
+            print(
+                f"Оценочная выручка: {result['estimated_revenue']:.2f} USD"
+            )
+
+    except (ValueError, CurrencyNotFoundError, InsufficientFundsError) as e:
+        print(f"Ошибка: {e}")
+
+
+def cmd_get_rate(args):
+    """Команда get-rate."""
+    from_code = args.get("from")
+    to_code = args.get("to")
+
+    if not from_code or not to_code:
+        print("Использование: get-rate --from <CODE> --to <CODE>")
+        return
+
+    try:
+        result = usecases.get_rate(from_code, to_code)
+        print(
+            f"Курс {result['from']}→{result['to']}: {result['rate']:.8f} "
+            f"(обновлено: {result['updated_at']})"
+        )
+        if result['rate']:
+            reverse = 1 / result['rate']
+            print(f"Обратный курс {result['to']}→{result['from']}: {reverse:.8f}")
+
+    except (CurrencyNotFoundError, ApiRequestError) as e:
+        print(f"Ошибка: {e}")
+
+
+def cmd_update_rates(args):
+    """Команда update-rates."""
+    try:
+        config = ParserConfig()
+        clients = [CoinGeckoClient(config), ExchangeRateApiClient(config)]
+        updater = RatesUpdater(clients, config)
+
+        result = updater.run_update()
+
+        print(
+            f"Update successful. Total rates updated: {result['total_rates']}. "
+            f"Last refresh: {result['last_refresh']}"
+        )
+
+        if result["errors"]:
+            print("Update completed with errors:")
+            for err in result["errors"]:
+                print(f"  - {err}")
+
+    except ApiRequestError as e:
+        print(f"Ошибка обновления: {e}")
+
+
+def cmd_help(args):
+    """Команда help."""
+    print("""
+Доступные команды:
+  register --username <name> --password <pass>   Регистрация
+  login --username <name> --password <pass>      Вход
+  show-portfolio [--base <CURRENCY>]             Показать портфель
+  buy --currency <CODE> --amount <float>         Купить валюту
+  sell --currency <CODE> --amount <float>        Продать валюту
+  get-rate --from <CODE> --to <CODE>             Показать курс
+  update-rates                                    Обновить курсы
+  help                                            Справка
+  exit                                            Выход
+""")
+
+
+def run_cli():
+    """Основной цикл CLI."""
+    print("=== ValutaTrade Hub ===")
+    print("Введите 'help' для справки\n")
+
+    while True:
+        try:
+            line = input("> ").strip()
+            if not line:
+                continue
+
+            command, args = parse_args(line)
+
+            if command == "exit":
+                print("До свидания!")
+                break
+            elif command == "help":
+                cmd_help(args)
+            elif command == "register":
+                cmd_register(args)
+            elif command == "login":
+                cmd_login(args)
+            elif command == "show-portfolio":
+                cmd_show_portfolio(args)
+            elif command == "buy":
+                cmd_buy(args)
+            elif command == "sell":
+                cmd_sell(args)
+            elif command == "get-rate":
+                cmd_get_rate(args)
+            elif command == "update-rates":
+                cmd_update_rates(args)
+            else:
+                print(f"Неизвестная команда: {command}")
+
+        except KeyboardInterrupt:
+            print("\nДо свидания!")
+            break
+        except Exception as e:
+            print(f"Непредвиденная ошибка: {e}")

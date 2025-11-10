@@ -1,0 +1,31 @@
+[project]
+name = "finalproject-tsibikov-m25-555"
+version = "0.1.0"
+description = "Платформа для отслеживания и симуляции торговли валютами"
+authors = [
+    {name = "Maxim Tsibikov",email = "m9845842@gmail.com"}
+]
+readme = "README.md"
+dependencies = [
+]
+packages = [{include = "valutatrade_hub"}]
+
+
+[tool.poetry.dependencies]
+python = "^3.10"
+prettytable = "^3.9.0"
+requests = "^2.31.0"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.1.0"
+
+[tool.poetry.scripts]
+project = "main:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "W", "C90", "I"]

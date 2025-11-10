@@ -22,19 +22,15 @@ def register_user(username: str, password: str) -> dict:
     """Регистрирует нового пользователя."""
     users = db.read_json(settings.users_file)
 
-    # Проверка уникальности
     if any(u["username"] == username for u in users):
         raise ValueError(f"Имя пользователя '{username}' уже занято")
 
-    # Создание пользователя
     user_id = max([u["user_id"] for u in users], default=0) + 1
     user = User.create_user(user_id, username, password)
 
-    # Сохранение
     users.append(user.to_dict())
     db.write_json(settings.users_file, users)
 
-    # Создание пустого портфеля
     portfolios = db.read_json(settings.portfolios_file)
     portfolios.append({"user_id": user_id, "wallets": {}})
     db.write_json(settings.portfolios_file, portfolios)
@@ -69,7 +65,6 @@ def load_portfolio(user_id: int) -> Portfolio:
             }
             return Portfolio(user_id, wallets)
 
-    # Если портфеля нет, создаём пустой
     return Portfolio(user_id)
 
 
@@ -90,19 +85,16 @@ def save_portfolio(portfolio: Portfolio):
 @log_action("BUY")
 def buy(user_id: int, currency_code: str, amount: float) -> dict:
     """Покупка валюты."""
-    # Валидация
     if amount <= 0:
         raise ValueError("'amount' должен быть положительным числом")
 
     try:
-        get_currency(currency_code)  # Проверка существования валюты
+        get_currency(currency_code)
     except CurrencyNotFoundError as e:
         raise e
 
-    # Загрузка портфеля
     portfolio = load_portfolio(user_id)
 
-    # Создание кошелька, если его нет
     if currency_code.upper() not in portfolio.wallets:
         portfolio.add_currency(currency_code)
 
@@ -112,10 +104,8 @@ def buy(user_id: int, currency_code: str, amount: float) -> dict:
     wallet.deposit(amount)
     new_balance = wallet.balance
 
-    # Сохранение
     save_portfolio(portfolio)
 
-    # Оценочная стоимость (если нужно)
     rates = db.read_json(settings.rates_file)
     pair_key = f"{currency_code.upper()}_USD"
     rate = rates.get("pairs", {}).get(pair_key, {}).get("rate", 0)
@@ -134,7 +124,6 @@ def buy(user_id: int, currency_code: str, amount: float) -> dict:
 @log_action("SELL")
 def sell(user_id: int, currency_code: str, amount: float) -> dict:
     """Продажа валюты."""
-    # Валидация
     if amount <= 0:
         raise ValueError("'amount' должен быть положительным числом")
 
@@ -143,7 +132,6 @@ def sell(user_id: int, currency_code: str, amount: float) -> dict:
     except CurrencyNotFoundError as e:
         raise e
 
-    # Загрузка портфеля
     portfolio = load_portfolio(user_id)
     wallet = portfolio.get_wallet(currency_code)
 
@@ -155,15 +143,13 @@ def sell(user_id: int, currency_code: str, amount: float) -> dict:
 
     old_balance = wallet.balance
     try:
-        wallet.withdraw(amount)  # Может бросить InsufficientFundsError
+        wallet.withdraw(amount)
     except InsufficientFundsError as e:
         raise e
     new_balance = wallet.balance
 
-    # Сохранение
     save_portfolio(portfolio)
 
-    # Оценочная выручка
     rates = db.read_json(settings.rates_file)
     pair_key = f"{currency_code.upper()}_USD"
     rate = rates.get("pairs", {}).get(pair_key, {}).get("rate", 0)
@@ -187,7 +173,6 @@ def get_rate(from_code: str, to_code: str) -> dict:
     except CurrencyNotFoundError as e:
         raise e
 
-    # Чтение кэша
     rates = db.read_json(settings.rates_file)
     pair_key = f"{from_code.upper()}_{to_code.upper()}"
 
@@ -198,7 +183,6 @@ def get_rate(from_code: str, to_code: str) -> dict:
             f"Курс {from_code}→{to_code} недоступен. Повторите попытку позже."
         )
 
-    # Проверка свежести
     updated_at_str = rate_data.get("updated_at")
     if updated_at_str:
         updated_at = datetime.fromisoformat(updated_at_str.replace("Z", ""))

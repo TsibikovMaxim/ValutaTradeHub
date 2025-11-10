@@ -51,7 +51,6 @@ class CryptoCurrency(Currency):
         )
 
 
-# Реестр валют
 CURRENCY_REGISTRY = {
     "USD": FiatCurrency("US Dollar", "USD", "United States"),
     "EUR": FiatCurrency("Euro", "EUR", "Eurozone"),

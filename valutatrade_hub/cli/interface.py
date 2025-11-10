@@ -13,7 +13,6 @@ from valutatrade_hub.parser_service.api_clients import (
 from valutatrade_hub.parser_service.config import ParserConfig
 from valutatrade_hub.parser_service.updater import RatesUpdater
 
-# Глобальная сессия (текущий пользователь)
 current_user = None
 
 
@@ -117,17 +116,14 @@ def cmd_show_portfolio(args):
             if from_code == to_code:
                 return 1.0
 
-            # Прямая пара
             direct = pairs.get(f"{from_code}_{to_code}")
             if direct:
                 return direct["rate"]
 
-            # Обратная пара
             reverse = pairs.get(f"{to_code}_{from_code}")
             if reverse and reverse["rate"] != 0:
                 return 1 / reverse["rate"]
 
-            # Через USD как промежуточную базу
             if to_code != "USD" and from_code != "USD":
                 rate_from_usd = get_rate(from_code, "USD")
                 rate_usd_to = get_rate("USD", to_code)
@@ -298,7 +294,7 @@ def run_cli():
         "sell": cmd_sell,
         "get-rate": cmd_get_rate,
         "update-rates": cmd_update_rates,
-        "exit": None,  # special case
+        "exit": None,
     }
 
     while True:

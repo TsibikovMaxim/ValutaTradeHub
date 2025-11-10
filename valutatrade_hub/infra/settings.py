@@ -18,7 +18,6 @@ class SettingsLoader:
         if self._initialized:
             return
 
-        # Пути к данным
         self.data_dir = os.getenv("DATA_DIR", "data")
         self.users_file = os.path.join(self.data_dir, "users.json")
         self.portfolios_file = os.path.join(self.data_dir, "portfolios.json")
@@ -27,13 +26,10 @@ class SettingsLoader:
             self.data_dir, "exchange_rates.json"
         )
 
-        # TTL курсов (в секундах)
         self.rates_ttl_seconds = int(os.getenv("RATES_TTL_SECONDS", 300))
 
-        # Базовая валюта
         self.default_base_currency = os.getenv("BASE_CURRENCY", "USD")
 
-        # Логирование
         self.log_file = os.getenv("LOG_FILE", "logs/actions.log")
         self.log_level = os.getenv("LOG_LEVEL", "INFO")
 

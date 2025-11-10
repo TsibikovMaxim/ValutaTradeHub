@@ -31,7 +31,7 @@ class RatesUpdater:
             client_name = client.__class__.__name__
             try:
                 logger.info(f"Fetching from {client_name}...")
-                rates = client.fetch_rates()  # словарь {PAIR_KEY: rate}
+                rates = client.fetch_rates()
                 if rates:
                     all_rates.update(rates)
                 logger.info(f"{client_name}: OK ({len(rates)} rates)")

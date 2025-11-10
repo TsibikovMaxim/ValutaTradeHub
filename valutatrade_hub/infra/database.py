@@ -22,8 +22,13 @@ class DatabaseManager:
                 return []
             return {"pairs": {}, "last_refresh": None}
 
-        with open(filepath, "r", encoding="utf-8") as f:
-            return json.load(f)
+        # Попытка открыть как UTF-8, если ошибка — UTF-16
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except UnicodeDecodeError:
+            with open(filepath, "r", encoding="utf-16") as f:
+                return json.load(f)
 
     def write_json(self, filepath: str, data: Any):
         """Записывает данные в JSON-файл атомарно."""

@@ -94,7 +94,10 @@ def buy(user_id: int, currency_code: str, amount: float) -> dict:
     if amount <= 0:
         raise ValueError("'amount' должен быть положительным числом")
 
-    currency = get_currency(currency_code)  # Проверка существования валюты
+    try:
+        get_currency(currency_code)  # Проверка существования валюты
+    except CurrencyNotFoundError as e:
+        raise e
 
     # Загрузка портфеля
     portfolio = load_portfolio(user_id)
@@ -135,7 +138,10 @@ def sell(user_id: int, currency_code: str, amount: float) -> dict:
     if amount <= 0:
         raise ValueError("'amount' должен быть положительным числом")
 
-    currency = get_currency(currency_code)
+    try:
+        get_currency(currency_code)
+    except CurrencyNotFoundError as e:
+        raise e
 
     # Загрузка портфеля
     portfolio = load_portfolio(user_id)
@@ -148,7 +154,10 @@ def sell(user_id: int, currency_code: str, amount: float) -> dict:
         )
 
     old_balance = wallet.balance
-    wallet.withdraw(amount)  # Может бросить InsufficientFundsError
+    try:
+        wallet.withdraw(amount)  # Может бросить InsufficientFundsError
+    except InsufficientFundsError as e:
+        raise e
     new_balance = wallet.balance
 
     # Сохранение
@@ -172,9 +181,11 @@ def sell(user_id: int, currency_code: str, amount: float) -> dict:
 
 def get_rate(from_code: str, to_code: str) -> dict:
     """Получает курс валюты."""
-    # Валидация валют
-    from_currency = get_currency(from_code)
-    to_currency = get_currency(to_code)
+    try:
+        get_currency(from_code)
+        get_currency(to_code)
+    except CurrencyNotFoundError as e:
+        raise e
 
     # Чтение кэша
     rates = db.read_json(settings.rates_file)

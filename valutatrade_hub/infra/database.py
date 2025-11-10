@@ -18,7 +18,9 @@ class DatabaseManager:
     def read_json(self, filepath: str) -> Any:
         """Читает данные из JSON-файла."""
         if not os.path.exists(filepath):
-            return [] if filepath.endswith(("users.json", "portfolios.json", "exchange_rates.json")) else {"pairs": {}, "last_refresh": None}
+            if filepath.endswith(("users.json", "portfolios.json", "exchange_rates.json")):
+                return []
+            return {"pairs": {}, "last_refresh": None}
 
         with open(filepath, "r", encoding="utf-8") as f:
             return json.load(f)

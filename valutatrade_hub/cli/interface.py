@@ -271,6 +271,18 @@ def run_cli():
     print("=== ValutaTrade Hub ===")
     print("Введите 'help' для справки\n")
 
+    commands = {
+        "help": cmd_help,
+        "register": cmd_register,
+        "login": cmd_login,
+        "show-portfolio": cmd_show_portfolio,
+        "buy": cmd_buy,
+        "sell": cmd_sell,
+        "get-rate": cmd_get_rate,
+        "update-rates": cmd_update_rates,
+        "exit": None,  # special case
+    }
+
     while True:
         try:
             line = input("> ").strip()
@@ -278,26 +290,16 @@ def run_cli():
                 continue
 
             command, args = parse_args(line)
+            if not command:
+                continue
 
             if command == "exit":
                 print("До свидания!")
                 break
-            elif command == "help":
-                cmd_help(args)
-            elif command == "register":
-                cmd_register(args)
-            elif command == "login":
-                cmd_login(args)
-            elif command == "show-portfolio":
-                cmd_show_portfolio(args)
-            elif command == "buy":
-                cmd_buy(args)
-            elif command == "sell":
-                cmd_sell(args)
-            elif command == "get-rate":
-                cmd_get_rate(args)
-            elif command == "update-rates":
-                cmd_update_rates(args)
+
+            cmd_func = commands.get(command)
+            if cmd_func:
+                cmd_func(args)
             else:
                 print(f"Неизвестная команда: {command}")
 
@@ -306,3 +308,4 @@ def run_cli():
             break
         except Exception as e:
             print(f"Непредвиденная ошибка: {e}")
+

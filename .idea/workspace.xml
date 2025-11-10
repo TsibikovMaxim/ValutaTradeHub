@@ -6,15 +6,14 @@
   <component name="ChangeListManager">
     <list default="true" id="3cea431c-c030-49c2-95aa-4777ec556485" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pyproject.toml" beforeDir="false" afterPath="$PROJECT_DIR$/pyproject.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/valutatrade_hub/cli/interface.py" beforeDir="false" afterPath="$PROJECT_DIR$/valutatrade_hub/cli/interface.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/valutatrade_hub/core/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/valutatrade_hub/core/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/valutatrade_hub/core/usecases.py" beforeDir="false" afterPath="$PROJECT_DIR$/valutatrade_hub/core/usecases.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/valutatrade_hub/core/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/valutatrade_hub/core/utils.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/valutatrade_hub/decorators.py" beforeDir="false" afterPath="$PROJECT_DIR$/valutatrade_hub/decorators.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/valutatrade_hub/infra/database.py" beforeDir="false" afterPath="$PROJECT_DIR$/valutatrade_hub/infra/database.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/valutatrade_hub/infra/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/valutatrade_hub/infra/settings.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/valutatrade_hub/parser_service/api_clients.py" beforeDir="false" afterPath="$PROJECT_DIR$/valutatrade_hub/parser_service/api_clients.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/valutatrade_hub/parser_service/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/valutatrade_hub/parser_service/config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/valutatrade_hub/logging_config.py" beforeDir="false" afterPath="$PROJECT_DIR$/valutatrade_hub/logging_config.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/valutatrade_hub/parser_service/storage.py" beforeDir="false" afterPath="$PROJECT_DIR$/valutatrade_hub/parser_service/storage.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/valutatrade_hub/parser_service/updater.py" beforeDir="false" afterPath="$PROJECT_DIR$/valutatrade_hub/parser_service/updater.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -42,9 +41,15 @@
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "git-widget-placeholder": "master",
+    "last_opened_file_path": "C:/Users/User/PycharmProjects/finalproject_tsibikov_m25_555",
     "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
   }
 }]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\User\PycharmProjects\finalproject_tsibikov_m25_555" />
+    </key>
+  </component>
   <component name="RunManager">
     <configuration name="main" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="finalproject_tsibikov_m25_555" />

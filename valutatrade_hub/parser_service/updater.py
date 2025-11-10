@@ -2,7 +2,7 @@
 
 import logging
 from datetime import datetime
-from typing import Dict, List
+from typing import List
 
 from valutatrade_hub.core.exceptions import ApiRequestError
 from valutatrade_hub.infra.database import DatabaseManager

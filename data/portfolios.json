@@ -4,16 +4,16 @@
     "wallets": {
       "BTC": {
         "currency_code": "BTC",
-        "balance": 0.04
+        "balance": 0.05
       },
       "EUR": {
         "currency_code": "EUR",
         "balance": 200.0
+      },
+      "SOL": {
+        "currency_code": "SOL",
+        "balance": 1.5
       }
     }
-  },
-  {
-    "user_id": 2,
-    "wallets": {}
   }
 ]

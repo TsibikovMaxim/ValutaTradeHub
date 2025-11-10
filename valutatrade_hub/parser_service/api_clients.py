@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from typing import Dict
-
+from datetime import datetime
 import requests
 
 from valutatrade_hub.core.exceptions import ApiRequestError
@@ -39,7 +39,7 @@ class CoinGeckoClient(BaseApiClient):
             for code, coin_id in self.config.CRYPTO_ID_MAP.items():
                 if coin_id in data:
                     rate = data[coin_id].get(vs_currencies)
-                    if rate:
+                    if rate is not None:
                         rates[f"{code}_{self.config.BASE_CURRENCY}"] = rate
 
             return rates
@@ -55,10 +55,7 @@ class ExchangeRateApiClient(BaseApiClient):
         if not self.config.EXCHANGERATE_API_KEY:
             raise ApiRequestError("ExchangeRate-API: отсутствует API-ключ")
 
-        url = (
-            f"{self.config.EXCHANGERATE_API_URL}/"
-            f"{self.config.EXCHANGERATE_API_KEY}/latest/{self.config.BASE_CURRENCY}"
-        )
+        url = f"{self.config.EXCHANGERATE_API_URL}/{self.config.EXCHANGERATE_API_KEY}/latest/{self.config.BASE_CURRENCY}"
 
         try:
             response = requests.get(url, timeout=self.config.REQUEST_TIMEOUT)
@@ -66,20 +63,16 @@ class ExchangeRateApiClient(BaseApiClient):
             data = response.json()
 
             if data.get("result") != "success":
-                raise ApiRequestError(
-                    f"ExchangeRate-API: {data.get('error-type', 'Unknown error')}"
-                )
+                raise ApiRequestError(f"ExchangeRate-API: {data.get('error-type', 'Unknown error')}")
 
-            rates_raw = data.get("rates", {})
-            rates = {}
+            rates_raw = data.get("conversion_rates", {})
+            pairs = {}
 
             for currency in self.config.FIAT_CURRENCIES:
-                if currency in rates_raw:
-                    # Инвертируем курс: 1 EUR = X USD -> EUR_USD
-                    rate = 1 / rates_raw[currency] if rates_raw[currency] else 0
-                    rates[f"{currency}_{self.config.BASE_CURRENCY}"] = rate
+                if currency in rates_raw and rates_raw[currency]:
+                    pairs[f"{currency}_{self.config.BASE_CURRENCY}"] = 1 / rates_raw[currency]
 
-            return rates
+            return pairs
 
         except requests.exceptions.RequestException as e:
             raise ApiRequestError(f"ExchangeRate-API: {str(e)}")

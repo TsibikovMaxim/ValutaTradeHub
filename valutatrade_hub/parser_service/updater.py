@@ -31,35 +31,33 @@ class RatesUpdater:
             client_name = client.__class__.__name__
             try:
                 logger.info(f"Fetching from {client_name}...")
-                rates = client.fetch_rates()
-                all_rates.update(rates)
+                rates = client.fetch_rates()  # словарь {PAIR_KEY: rate}
+                if rates:
+                    all_rates.update(rates)
                 logger.info(f"{client_name}: OK ({len(rates)} rates)")
             except ApiRequestError as e:
-                errors.append(f"{client_name}: {e.reason}")
-                logger.error(f"Failed to fetch from {client_name}: {e.reason}")
+                errors.append(f"{client_name}: {str(e)}")
+                logger.error(f"Failed to fetch from {client_name}: {str(e)}")
 
         if not all_rates:
             raise ApiRequestError("Не удалось получить ни одного курса")
 
-        # Формирование итогового JSON
         timestamp = datetime.utcnow().isoformat() + "Z"
+        pairs_dict = {}
+        for pair, rate in all_rates.items():
+            pairs_dict[pair] = {
+                "rate": rate,
+                "updated_at": timestamp,
+                "source": "ParserService",
+            }
+
         rates_data = {
-            "pairs": {
-                pair: {
-                    "rate": rate,
-                    "updated_at": timestamp,
-                    "source": "ParserService",
-                }
-                for pair, rate in all_rates.items()
-            },
+            "pairs": pairs_dict,
             "last_refresh": timestamp,
         }
 
-        # Сохранение
         self.db.write_json(self.config.RATES_FILE_PATH, rates_data)
-        logger.info(
-            f"Writing {len(all_rates)} rates to {self.config.RATES_FILE_PATH}..."
-        )
+        logger.info(f"Writing {len(all_rates)} rates to {self.config.RATES_FILE_PATH}...")
 
         return {
             "total_rates": len(all_rates),

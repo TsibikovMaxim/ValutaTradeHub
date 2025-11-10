@@ -83,7 +83,7 @@ def cmd_login(args):
 
 
 def cmd_show_portfolio(args):
-    """Команда show-portfolio с prettytable."""
+    """Команда show-portfolio с prettytable и конвертацией базовой валюты."""
     if not current_user:
         print("Сначала выполните login")
         return
@@ -92,6 +92,8 @@ def cmd_show_portfolio(args):
 
     try:
         from prettytable import PrettyTable
+        from valutatrade_hub.infra.database import DatabaseManager
+        from valutatrade_hub.infra.settings import SettingsLoader
 
         portfolio = usecases.load_portfolio(current_user.user_id)
         wallets = portfolio.wallets
@@ -105,25 +107,41 @@ def cmd_show_portfolio(args):
         table = PrettyTable()
         table.field_names = ["Валюта", "Баланс", f"Стоимость ({base})"]
 
-        from valutatrade_hub.infra.database import DatabaseManager
-        from valutatrade_hub.infra.settings import SettingsLoader
-
         settings = SettingsLoader()
         db = DatabaseManager()
-        rates = db.read_json(settings.rates_file)
+        rates_data = db.read_json(settings.rates_file)
+        pairs = rates_data.get("pairs", {})
+
+        def get_rate(from_code: str, to_code: str) -> float:
+            """Получает курс между двумя валютами, даже если прямой пары нет."""
+            if from_code == to_code:
+                return 1.0
+
+            # Прямая пара
+            direct = pairs.get(f"{from_code}_{to_code}")
+            if direct:
+                return direct["rate"]
+
+            # Обратная пара
+            reverse = pairs.get(f"{to_code}_{from_code}")
+            if reverse and reverse["rate"] != 0:
+                return 1 / reverse["rate"]
+
+            # Через USD как промежуточную базу
+            if to_code != "USD" and from_code != "USD":
+                rate_from_usd = get_rate(from_code, "USD")
+                rate_usd_to = get_rate("USD", to_code)
+                if rate_from_usd and rate_usd_to:
+                    return rate_from_usd * rate_usd_to
+
+            return 0.0
 
         total_value = 0.0
 
         for code, wallet in wallets.items():
             balance = wallet.balance
-
-            if code == base:
-                value = balance
-            else:
-                pair_key = f"{code}_{base}"
-                rate = rates.get("pairs", {}).get(pair_key, {}).get("rate", 0)
-                value = balance * rate if rate else 0
-
+            rate = get_rate(code, base)
+            value = balance * rate
             total_value += value
             table.add_row([code, f"{balance:.4f}", f"{value:.2f}"])
 

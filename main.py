@@ -1,17 +1,14 @@
-# This is a sample Python script.
+"""Точка входа приложения."""
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+from valutatrade_hub.cli.interface import run_cli
+from valutatrade_hub.logging_config import setup_logging
 
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+def main():
+    """Главная функция запуска приложения."""
+    setup_logging()
+    run_cli()
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
 
+if __name__ == "__main__":
+    main()

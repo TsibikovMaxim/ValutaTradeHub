@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from typing import Dict
-from datetime import datetime
+
 import requests
 
 from valutatrade_hub.core.exceptions import ApiRequestError
@@ -55,7 +55,11 @@ class ExchangeRateApiClient(BaseApiClient):
         if not self.config.EXCHANGERATE_API_KEY:
             raise ApiRequestError("ExchangeRate-API: отсутствует API-ключ")
 
-        url = f"{self.config.EXCHANGERATE_API_URL}/{self.config.EXCHANGERATE_API_KEY}/latest/{self.config.BASE_CURRENCY}"
+        url = (f""
+               f"{self.config.EXCHANGERATE_API_URL}/"
+               f"{self.config.EXCHANGERATE_API_KEY}/"
+               f"latest/{self.config.BASE_CURRENCY}"
+               f"")
 
         try:
             response = requests.get(url, timeout=self.config.REQUEST_TIMEOUT)
@@ -63,7 +67,9 @@ class ExchangeRateApiClient(BaseApiClient):
             data = response.json()
 
             if data.get("result") != "success":
-                raise ApiRequestError(f"ExchangeRate-API: {data.get('error-type', 'Unknown error')}")
+                raise ApiRequestError(
+                    f"ExchangeRate-API: {data.get('error-type', 'Unknown error')}"
+                )
 
             rates_raw = data.get("conversion_rates", {})
             pairs = {}

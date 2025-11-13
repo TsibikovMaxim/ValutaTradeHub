@@ -1,11 +1,15 @@
 """Командный интерфейс (CLI)."""
 
+from prettytable import PrettyTable
+
 from valutatrade_hub.core import usecases
 from valutatrade_hub.core.exceptions import (
     ApiRequestError,
     CurrencyNotFoundError,
     InsufficientFundsError,
 )
+from valutatrade_hub.infra.database import DatabaseManager
+from valutatrade_hub.infra.settings import SettingsLoader
 from valutatrade_hub.parser_service.api_clients import (
     CoinGeckoClient,
     ExchangeRateApiClient,
@@ -81,68 +85,69 @@ def cmd_login(args):
         print(f"Ошибка: {e}")
 
 
+def get_rate(pairs, from_code: str, to_code: str) -> float:
+    """Получает курс между валютами"""
+    if from_code == to_code:
+        return 1.0
+
+    direct = pairs.get(f"{from_code}_{to_code}")
+    if direct:
+        return direct["rate"]
+
+    reverse = pairs.get(f"{to_code}_{from_code}")
+    if reverse and reverse["rate"]:
+        return 1 / reverse["rate"]
+
+    if from_code != "USD" and to_code != "USD":
+        usd_base = get_rate(pairs, from_code, "USD")
+        usd_target = get_rate(pairs, "USD", to_code)
+        return usd_base * usd_target if usd_base and usd_target else 0.0
+
+    return 0.0
+
+
+def calculate_portfolio_value(pairs, wallets_dict, base):
+    total = 0.0
+    rows = []
+    for code, wallet in wallets_dict.items():
+        balance = wallet.balance
+        rate = get_rate(pairs, code, base)
+        value = balance * rate
+        total += value
+        rows.append((code, balance, value))
+    return total, rows
+
+
 def cmd_show_portfolio(args):
     """Команда show-portfolio с prettytable и конвертацией базовой валюты."""
     if not current_user:
         print("Сначала выполните login")
         return
 
-    base = args.get("base", "USD").upper()
+    base_currency = args.get("base", "USD").upper()
 
     try:
-        from prettytable import PrettyTable
-        from valutatrade_hub.infra.database import DatabaseManager
-        from valutatrade_hub.infra.settings import SettingsLoader
-
         portfolio = usecases.load_portfolio(current_user.user_id)
         wallets = portfolio.wallets
-
         if not wallets:
             print(f"Портфель пользователя '{current_user.username}' пуст.")
             return
 
-        print(f"\nПортфель пользователя '{current_user.username}' (база: {base}):\n")
-
-        table = PrettyTable()
-        table.field_names = ["Валюта", "Баланс", f"Стоимость ({base})"]
-
         settings = SettingsLoader()
         db = DatabaseManager()
-        rates_data = db.read_json(settings.rates_file)
-        pairs = rates_data.get("pairs", {})
+        pairs = db.read_json(settings.rates_file).get("pairs", {})
 
-        def get_rate(from_code: str, to_code: str) -> float:
-            """Получает курс между двумя валютами, даже если прямой пары нет."""
-            if from_code == to_code:
-                return 1.0
+        total_value, rows = calculate_portfolio_value(pairs, wallets, base_currency)
+        print(f"\nПортфель пользователя '{current_user.username}' (база: {base_currency}):\n")
 
-            direct = pairs.get(f"{from_code}_{to_code}")
-            if direct:
-                return direct["rate"]
+        table = PrettyTable()
+        table.field_names = ["Валюта", "Баланс", f"Стоимость ({base_currency})"]
 
-            reverse = pairs.get(f"{to_code}_{from_code}")
-            if reverse and reverse["rate"] != 0:
-                return 1 / reverse["rate"]
-
-            if to_code != "USD" and from_code != "USD":
-                rate_from_usd = get_rate(from_code, "USD")
-                rate_usd_to = get_rate("USD", to_code)
-                if rate_from_usd and rate_usd_to:
-                    return rate_from_usd * rate_usd_to
-
-            return 0.0
-
-        total_value = 0.0
-
-        for code, wallet in wallets.items():
-            balance = wallet.balance
-            rate = get_rate(code, base)
-            value = balance * rate
-            total_value += value
+        for code, balance, value in rows:
             table.add_row([code, f"{balance:.4f}", f"{value:.2f}"])
 
         print(table)
-        print(f"\nИТОГО: {total_value:,.2f} {base}\n")
+        print(f"\nИТОГО: {total_value:,.2f} {base_currency}\n")
 
     except Exception as e:
         print(f"Ошибка: {e}")
@@ -322,4 +327,3 @@ def run_cli():
             break
         except Exception as e:
             print(f"Непредвиденная ошибка: {e}")
-

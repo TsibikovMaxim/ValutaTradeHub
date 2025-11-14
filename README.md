@@ -66,6 +66,7 @@ finalproject_tsibikov_m25_555/
 
 ## Примеры команд CLI
 
+```
 - `register --username alice --password 1234` — зарегистрировать пользователя.
 - `login --username alice --password 1234` — войти пользователю.
 - `show-portfolio` — показать портфель пользователя.
@@ -77,6 +78,7 @@ finalproject_tsibikov_m25_555/
 - `update-rates` — обновить курсы валют через Parser Service.
 - `help` — справка по командам.
 - `exit` — выйти из приложения.
+```
 
 ---
 

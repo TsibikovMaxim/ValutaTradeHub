@@ -120,6 +120,7 @@ Parser Service обновляет курсы валют, используя пу
 
 ## Пример сценария для быстрой проверки
 
+```
 register --username alice --password 1234
 login --username alice --password 1234
 update-rates
@@ -130,6 +131,7 @@ get-rate --from BTC --to USD
 sell --currency BTC --amount 0.01
 show-portfolio --base EUR
 exit
+```
 
 ---
 

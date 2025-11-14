@@ -12,5 +12,19 @@
     "hashed_password": "edaa43265cf362ecae4b593adaca70762f3443ca2cf7227117b25654876f28cd",
     "salt": "af9daf07adff545a",
     "registration_date": "2025-11-13T14:10:31.784484"
+  },
+  {
+    "user_id": 3,
+    "username": "alice2",
+    "hashed_password": "6d279203b0073715bbc254333bfac495b2e3b754cd98824afbc135f60efe8702",
+    "salt": "f7aefd31a0787a59",
+    "registration_date": "2025-11-13T16:09:48.575570"
+  },
+  {
+    "user_id": 4,
+    "username": "john",
+    "hashed_password": "ea9ec7ba6fb03ac58ef0b52867b4154ddacafd69b09a15f7ef2d75da8532d0a5",
+    "salt": "e6a940cdbc15b33e",
+    "registration_date": "2025-11-13T16:11:02.078848"
   }
 ]
